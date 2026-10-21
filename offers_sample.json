@@ -1,0 +1,18 @@
+{
+  "offers": [
+    {
+      "title": "Diwali Special: Pune to Mahabaleshwar",
+      "subtitle": "Festive weekend package with a comfortable sedan.",
+      "tag": "FESTIVE OFFER",
+      "imageUrl": "",
+      "trip": "roundTrip"
+    },
+    {
+      "title": "Airport pickup, 24x7",
+      "subtitle": "Fixed fare, on-time driver.",
+      "tag": "AIRPORT",
+      "imageUrl": "",
+      "trip": "airport"
+    }
+  ]
+}
