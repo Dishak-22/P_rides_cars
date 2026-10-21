@@ -1,0 +1,27 @@
+name: p_ride
+description: P-Ride - Pune's Smart Ride. Premium ride-booking UI prototype.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo prime ride car.jpeg"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/

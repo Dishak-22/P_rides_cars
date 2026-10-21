@@ -1,0 +1,38 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'dev.flutter.flutter-gradle-plugin'
+}
+
+android {
+    namespace 'com.pride.app'
+    compileSdk flutter.compileSdkVersion
+    ndkVersion flutter.ndkVersion
+ 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // Keep your existing kotlinOptions block if present.
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    defaultConfig {
+        applicationId 'com.pride.app'
+        minSdk flutter.minSdkVersion
+        targetSdk flutter.targetSdkVersion
+        versionCode 1
+        versionName "1.0.0"
+    }
+        buildTypes {
+        release {
+            // Debug key is fine for sharing with friends / testing.
+            // Use your own keystore for Play Store.
+            signingConfig signingConfigs.debug
+        }
+    }
+}
+
+flutter { source '../..' }
