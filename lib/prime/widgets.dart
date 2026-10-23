@@ -15,9 +15,9 @@ Future<void> openWhatsApp(BuildContext context, {String? text}) async {
   final uri = Uri.parse('https://wa.me/${AppConfig.whatsapp}$q');
   try {
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!ok && context.mounted) snack(context, 'Could not open WhatsApp');
+    if (!ok && context.mounted) snack(context, 'WhatsApp is not available on this device');
   } catch (_) {
-    if (context.mounted) snack(context, 'Could not open WhatsApp');
+    if (context.mounted) snack(context, 'WhatsApp is not available on this device');
   }
 }
 
@@ -225,6 +225,6 @@ class BookingDetails extends StatelessWidget {
         InfoRow('Vehicle', '${b.vehicle} • ${b.seats} seater'),
         if (b.note.isNotEmpty) InfoRow('Note', b.note),
         const Divider(height: 22),
-        InfoRow('Fare', '₹${b.amount}', bold: true),
+        InfoRow('Booking advance', '₹${b.amount}', bold: true),
       ]);
 }

@@ -216,7 +216,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                 ElevatedButton(onPressed: _submit, child: const Text('Book Now')),
                 const SizedBox(height: 8),
                 const Center(
-                  child: Text('Fixed fare ₹${AppConfig.fare} • payable on the next page', style: TextStyle(color: P.muted, fontSize: 12)),
+                  child: Text('Booking advance amount ₹${AppConfig.fare} • payable on the next page', style: TextStyle(color: P.muted, fontSize: 12)),
                 ),
               ],
             ),

@@ -430,7 +430,7 @@ class _PickupCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Pickup', style: TextStyle(fontSize: 11, color: AppColors.muted)),
-                  Text('Pune Railway Station1', style: TextStyle(fontWeight: FontWeight.w800)),
+                  Text('Pune Railway Station', style: TextStyle(fontWeight: FontWeight.w800)),
                 ],
               ),
             ),

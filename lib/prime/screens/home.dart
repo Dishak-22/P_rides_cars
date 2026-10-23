@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import '../config.dart';
 import '../models.dart';
@@ -6,6 +5,10 @@ import '../offers_repo.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import '../home/booking_category_card.dart';
+import '../home/promo_carousel.dart';
+import '../home/promo_slide.dart';
+import '../home/whatsapp_fab.dart';
 import 'auth.dart';
 import 'booking_form.dart';
 import 'history.dart';
@@ -42,14 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
       listenable: store,
       builder: (context, _) => Scaffold(
         drawer: _buildDrawer(store),
-        floatingActionButton: FloatingActionButton(
-          heroTag: 'wa',
-          tooltip: 'Chat on WhatsApp',
-          backgroundColor: P.green,
-          foregroundColor: Colors.white,
-          onPressed: () => openWhatsApp(context, text: 'Hello PRIME RIDES PUNE, I need help with a ride.'),
-          child: const Icon(Icons.chat_rounded, size: 28),
-        ),
+        floatingActionButton: const WhatsAppFab(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         body: SafeArea(
           child: ListView(
             padding: const EdgeInsets.only(bottom: 100),
@@ -65,31 +62,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(color: P.navy, fontSize: 28, height: 1.15, fontWeight: FontWeight.w900)),
                 ]),
               ),
-              HomeSlider(offers: _offers, onBook: _book),
+              PromoCarousel(
+                slides: PromoSlides.fromOffers(_offers, remote: AppConfig.offersUrl.isNotEmpty),
+                onBook: _book,
+              ),
               const Padding(
                 padding: EdgeInsets.fromLTRB(20, 26, 20, 4),
-                child: Text('Choose your ride', style: TextStyle(color: P.navy, fontSize: 21, fontWeight: FontWeight.w900)),
+                child: Text('Choose Your Ride', style: TextStyle(color: P.navy, fontSize: 21, fontWeight: FontWeight.w900)),
               ),
               const Padding(
                 padding: EdgeInsets.fromLTRB(20, 0, 20, 14),
-                child: Text('Tap Book Now on any service.', style: TextStyle(color: P.muted, fontSize: 13)),
+                child: Text('Tap a service to start your booking.', style: TextStyle(color: P.muted, fontSize: 13)),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(children: [
-                  Row(children: [
-                    Expanded(child: _RideCard(TripType.oneWay, () => _book(TripType.oneWay))),
-                    const SizedBox(width: 12),
-                    Expanded(child: _RideCard(TripType.hourly, () => _book(TripType.hourly))),
-                  ]),
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    Expanded(child: _RideCard(TripType.roundTrip, () => _book(TripType.roundTrip))),
-                    const SizedBox(width: 12),
-                    Expanded(child: _RideCard(TripType.airport, () => _book(TripType.airport))),
-                  ]),
-                ]),
-              ),
+              BookingCategoryGrid(onSelect: _book),
               const SizedBox(height: 26),
               const Center(
                 child: Text(AppConfig.businessName,
@@ -183,236 +168,4 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(title, style: const TextStyle(color: P.navy, fontWeight: FontWeight.w700)),
         onTap: onTap,
       );
-}
-
-class _RideCard extends StatelessWidget {
-  const _RideCard(this.type, this.onTap);
-  final TripType type;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(22),
-          onTap: onTap,
-          child: Container(
-            height: 200,
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: P.line),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(color: type.color.withValues(alpha: .12), borderRadius: BorderRadius.circular(14)),
-                child: Icon(type.icon, color: type.color, size: 25),
-              ),
-              const SizedBox(height: 12),
-              Text(type.label, style: const TextStyle(color: P.navy, fontSize: 13, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 4),
-              Expanded(
-                child: Text(type.description,
-                    maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: P.muted, fontSize: 11, height: 1.3)),
-              ),
-              SizedBox(
-                height: 38,
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: onTap,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(0, 38),
-                    padding: EdgeInsets.zero,
-                    backgroundColor: type.color,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Book Now', style: TextStyle(fontSize: 13)),
-                ),
-              ),
-            ]),
-          ),
-        ),
-      );
-}
-
-// ───────────────────────── Animated slider ─────────────────────────
-
-class _Slide {
-  final String title, subtitle, tag, imageUrl;
-  final Vehicle? vehicle;
-  final TripType trip;
-  final List<Color> colors;
-  const _Slide(this.title, this.subtitle, this.tag, this.trip, this.colors, {this.vehicle, this.imageUrl = ''});
-}
-
-class HomeSlider extends StatefulWidget {
-  const HomeSlider({super.key, required this.offers, required this.onBook});
-  final List<Offer> offers;
-  final ValueChanged<TripType> onBook;
-  @override
-  State<HomeSlider> createState() => _HomeSliderState();
-}
-
-class _HomeSliderState extends State<HomeSlider> {
-  final _ctrl = PageController(viewportFraction: .92);
-  Timer? _timer;
-  int _page = 0;
-
-  static const _palettes = [
-    [Color(0xFF10233F), Color(0xFF2457E6)],
-    [Color(0xFF5B2A86), Color(0xFF7950D9)],
-    [Color(0xFF0E5E4A), Color(0xFF15966B)],
-    [Color(0xFF9A3B0B), Color(0xFFE47B22)],
-  ];
-
-  List<_Slide> get _slides {
-    final out = <_Slide>[];
-    for (var i = 0; i < widget.offers.length; i++) {
-      final o = widget.offers[i];
-      out.add(_Slide(o.title, o.subtitle, o.tag, o.trip, _palettes[i % _palettes.length], imageUrl: o.imageUrl,
-          vehicle: o.imageUrl.isEmpty ? vehicles[(i + 1) % vehicles.length] : null));
-    }
-    for (var i = 0; i < vehicles.length; i++) {
-      final v = vehicles[i];
-      out.add(_Slide('${v.name} • ${v.seats} Seater', v.model, 'OUR FLEET', TripType.oneWay, _palettes[(i + 2) % _palettes.length], vehicle: v));
-    }
-    return out;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!mounted || !_ctrl.hasClients) return;
-      final n = _slides.length;
-      _ctrl.animateToPage((_page + 1) % n, duration: const Duration(milliseconds: 700), curve: Curves.easeInOutCubic);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final slides = _slides;
-    return Column(children: [
-      SizedBox(
-        height: 210,
-        child: PageView.builder(
-          controller: _ctrl,
-          itemCount: slides.length,
-          onPageChanged: (i) => setState(() => _page = i),
-          itemBuilder: (_, i) => _SlideCard(slide: slides[i], onBook: () => widget.onBook(slides[i].trip)),
-        ),
-      ),
-      const SizedBox(height: 12),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(
-          slides.length,
-          (i) => AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            height: 6,
-            width: i == _page ? 22 : 6,
-            decoration: BoxDecoration(color: i == _page ? P.blue : const Color(0xFFD3DBEA), borderRadius: BorderRadius.circular(20)),
-          ),
-        ),
-      ),
-    ]);
-  }
-}
-
-class _SlideCard extends StatelessWidget {
-  const _SlideCard({required this.slide, required this.onBook});
-  final _Slide slide;
-  final VoidCallback onBook;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasImage = slide.imageUrl.isNotEmpty;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(colors: slide.colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
-      ),
-      child: Stack(fit: StackFit.expand, children: [
-        if (hasImage) ...[
-          Image.network(slide.imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.black.withValues(alpha: .1), Colors.black.withValues(alpha: .75)],
-              ),
-            ),
-          ),
-        ],
-        if (slide.vehicle != null)
-          Positioned(
-            right: 10,
-            bottom: 6,
-            width: 165,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: 1),
-              duration: const Duration(milliseconds: 1100),
-              curve: Curves.easeOutCubic,
-              builder: (_, v, child) => Opacity(
-                opacity: v.clamp(0.0, 1.0),
-                child: Transform.translate(offset: Offset((1 - v) * -220, 0), child: child),
-              ),
-              child: VehicleArt(slide.vehicle!),
-            ),
-          ),
-        Positioned(
-          left: 18,
-          right: 18,
-          top: 16,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: .92), borderRadius: BorderRadius.circular(20)),
-              child: Text(slide.tag, style: TextStyle(color: slide.colors.last, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .7)),
-            ),
-            const SizedBox(height: 10),
-            Text(slide.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 20, height: 1.15, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 5),
-            Text(slide.subtitle,
-                maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFE6ECF8), fontSize: 12)),
-          ]),
-        ),
-        Positioned(
-          left: 18,
-          bottom: 16,
-          child: SizedBox(
-            height: 38,
-            child: ElevatedButton(
-              onPressed: onBook,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(0, 38),
-                backgroundColor: Colors.white,
-                foregroundColor: P.navy,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Book Now', style: TextStyle(fontSize: 12)),
-            ),
-          ),
-        ),
-      ]),
-    );
-  }
 }

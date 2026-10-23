@@ -6,10 +6,12 @@ class AppConfig {
   static const tagline = 'Your ride, your way';
 
   /// WhatsApp number with country code, digits only.
-  static const whatsapp = '919822791946';
-  static const phoneDisplay = '+91 98227 91946';
+  static const whatsapp = '919112000112';
+  /// First message pre-filled when the customer taps the WhatsApp button.
+  static const whatsappGreeting = 'Hello PRIME RIDES PUNE, I need help with a ride.';
+  static const phoneDisplay = '+91 91120 00112';
 
-  /// Fixed fare charged on every ride (in rupees).
+  /// Booking advance amount charged at booking (in rupees).
   static const fare = 1000;
 
   /// Demo OTP used until a real SMS provider is connected.

@@ -32,10 +32,10 @@ extension TripTypeX on TripType {
       }[this]!;
 
   Color get color => const {
-        TripType.oneWay: Color(0xFF2457E6),
-        TripType.hourly: Color(0xFFE47B22),
-        TripType.roundTrip: Color(0xFF7950D9),
-        TripType.airport: Color(0xFF15966B),
+        TripType.oneWay: Color(0xFF1769C2),
+        TripType.hourly: Color(0xFFB57F00),
+        TripType.roundTrip: Color(0xFF123A70),
+        TripType.airport: Color(0xFF0E7C86),
       }[this]!;
 }
 
@@ -56,7 +56,7 @@ class Vehicle {
 /// To use real photos set imageUrl: 'https://...'
 const vehicles = <Vehicle>[
   Vehicle('Hatchback', 'Swift / WagonR', 4, 0, Color(0xFFE45454)),
-  Vehicle('Sedan', 'Dzire / Etios', 4, 1, Color(0xFF2457E6)),
+  Vehicle('Sedan', 'Dzire / Etios', 4, 1, Color(0xFF1769C2)),
   Vehicle('SUV', 'Ertiga / XL6', 6, 2, Color(0xFF15966B)),
   Vehicle('Innova', 'Innova Crysta', 7, 2, Color(0xFF6B7788)),
   Vehicle('Tempo Traveller', '12 seater van', 12, 3, Color(0xFFE47B22)),
@@ -174,14 +174,24 @@ class Booking {
         status: (j['status'] ?? 'Pending') as String,
       );
 
-  String get whatsappText => 'Hello PRIME RIDES PUNE, I have booked a ride.\n'
-      'Booking ID: $id\n'
-      'Trip: ${type.title}${extra.isEmpty ? '' : ' ($extra)'}\n'
-      'Name: $name\nContact: $contact\n'
-      'Pickup: ${fmtDateTime(pickupAt)}\n'
-      'From: $pickup\n'
-      '${drop.isEmpty ? '' : 'To: $drop\n'}'
-      'Vehicle: $vehicle ($seats seater)\n'
-      '${note.isEmpty ? '' : 'Note: $note\n'}'
-      'Paid: Rs $amount';
+  String get whatsappText {
+    String two(int n) => n.toString().padLeft(2, '0');
+    final date = '${pickupAt.year}-${two(pickupAt.month)}-${two(pickupAt.day)}';
+    final time = '${two(pickupAt.hour)}:${two(pickupAt.minute)}';
+    final trip = extra.isEmpty ? type.title : '${type.title} ($extra)';
+    return '🚖 *NEW CAB BOOKING*\n\n'
+        '👤 Name: $name\n'
+        '📞 Mobile: $contact\n'
+        '📧 Email: $email\n\n'
+        '🚘 Trip Type: $trip\n'
+        '🚗 Vehicle: $vehicle ($seats seater)\n\n'
+        '📍 Pickup: $pickup\n'
+        '${drop.isEmpty ? '' : '📍 Drop: $drop\n'}\n'
+        '📅 Date: $date\n'
+        '⏰ Time: $time\n\n'
+        '💰 Booking advance paid: ₹$amount (Razorpay)\n'
+        '🧾 Payment ID: ${paymentId.isEmpty ? '-' : paymentId}\n'
+        '🆔 Booking ID: $id\n\n'
+        '📝 Message: $note';
+  }
 }

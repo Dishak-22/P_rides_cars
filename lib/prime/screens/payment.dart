@@ -116,7 +116,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               onPressed: _busy ? null : _pay,
               child: _busy
                   ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                  : Text('Pay ₹${b.amount} & Book Ride'),
+                  : Text('Pay ₹${b.amount} Booking Advance'),
             ),
           ),
         ]),
@@ -148,7 +148,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ]),
               ),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                const Text('Amount', style: TextStyle(color: Color(0xFFB9C7DD), fontSize: 11)),
+                const Text('Booking advance amount', style: TextStyle(color: Color(0xFFB9C7DD), fontSize: 11)),
                 Text('₹${b.amount}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24)),
               ]),
             ]),
@@ -157,7 +157,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             padding: EdgeInsets.fromLTRB(18, 14, 18, 4),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text('Fixed fare on every ride', style: TextStyle(color: P.green, fontWeight: FontWeight.w800, fontSize: 12)),
+              child: Text('Booking advance amount', style: TextStyle(color: P.green, fontWeight: FontWeight.w800, fontSize: 12)),
             ),
           ),
           const _Method(Icons.qr_code_2_rounded, 'UPI', 'Google Pay • PhonePe • Paytm • BHIM'),
@@ -230,7 +230,9 @@ class _DemoCheckoutState extends State<_DemoCheckout> {
               const Expanded(child: Text(AppConfig.businessName, style: TextStyle(color: P.navy, fontWeight: FontWeight.w900))),
               Text('₹${widget.amount}', style: const TextStyle(color: P.navy, fontWeight: FontWeight.w900, fontSize: 20)),
             ]),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
+            const Text('Booking advance amount', style: TextStyle(color: P.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 2),
             Text('+91 ${widget.phone}', style: const TextStyle(color: P.muted, fontSize: 12)),
             const SizedBox(height: 14),
             for (var i = 0; i < _m.length; i++)
@@ -255,9 +257,25 @@ class _DemoCheckoutState extends State<_DemoCheckout> {
       );
 }
 
-class SuccessScreen extends StatelessWidget {
+class SuccessScreen extends StatefulWidget {
   const SuccessScreen({super.key, required this.booking});
   final Booking booking;
+
+  @override
+  State<SuccessScreen> createState() => _SuccessScreenState();
+}
+
+class _SuccessScreenState extends State<SuccessScreen> {
+  Booking get booking => widget.booking;
+
+  @override
+  void initState() {
+    super.initState();
+    // Open WhatsApp with the booking message addressed to the admin number.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) openWhatsApp(context, text: booking.whatsappText);
+    });
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -282,6 +300,14 @@ class SuccessScreen extends StatelessWidget {
             const Center(child: Text('Ride booked!', style: TextStyle(color: P.navy, fontSize: 27, fontWeight: FontWeight.w900))),
             const SizedBox(height: 6),
             Center(child: Text('Booking ID: ${booking.id}', style: const TextStyle(color: P.muted, fontWeight: FontWeight.w700))),
+            const SizedBox(height: 8),
+            const Center(
+              child: Text(
+                'WhatsApp opens with your booking. Tap Send to share it with Prime Rides.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: P.muted, fontSize: 12),
+              ),
+            ),
             const SizedBox(height: 20),
             Panel(child: BookingDetails(booking)),
             const SizedBox(height: 18),
@@ -289,7 +315,7 @@ class SuccessScreen extends StatelessWidget {
               style: ElevatedButton.styleFrom(backgroundColor: P.green),
               onPressed: () => openWhatsApp(context, text: booking.whatsappText),
               icon: const Icon(Icons.chat_rounded),
-              label: const Text('Send details on WhatsApp'),
+              label: const Text('Send booking to admin on WhatsApp'),
             ),
             const SizedBox(height: 10),
             OutlinedButton(

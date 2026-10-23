@@ -138,14 +138,13 @@ class _OffersScreenState extends State<OffersScreen> {
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
 
-  static const _items = <(IconData, String, String)>[
-    (Icons.flight_takeoff_rounded, 'Airport transfers', 'Pune airport pickup and drop, any time.'),
-    (Icons.arrow_forward_rounded, 'One-way drops', 'City and outstation drops. Pay one direction only.'),
-    (Icons.sync_alt_rounded, 'Round trips', 'Outstation trips with return journey.'),
-    (Icons.schedule_rounded, 'Hourly rentals', '4, 8 and 12 hour packages with driver.'),
-    (Icons.landscape_rounded, 'Tour packages', 'Weekend getaways and seasonal packages.'),
-    (Icons.business_center_rounded, 'Corporate travel', 'Reliable cabs for staff and guests.'),
-    (Icons.favorite_rounded, 'Weddings & events', 'Cars and tempo travellers for functions.'),
+  static const _items = <(IconData, String, String, TripType)>[
+    (Icons.flight_takeoff_rounded, 'Airport transfers', 'Pune airport pickup and drop, any time.', TripType.airport),
+    (Icons.arrow_forward_rounded, 'One-way drops', 'City and outstation drops. Pay one direction only.', TripType.oneWay),
+    (Icons.sync_alt_rounded, 'Round trips', 'Outstation trips with return journey.', TripType.roundTrip),
+    (Icons.schedule_rounded, 'Hourly rentals', '4, 8 and 12 hour packages with driver.', TripType.hourly),
+    (Icons.landscape_rounded, 'Tour packages', 'Weekend getaways and seasonal packages.', TripType.roundTrip),
+    (Icons.favorite_rounded, 'Weddings & events', 'Cars and tempo travellers for functions.', TripType.hourly),
   ];
 
   @override
@@ -158,20 +157,32 @@ class ServicesScreen extends StatelessWidget {
           itemBuilder: (_, i) {
             final it = _items[i];
             return Panel(
-              child: Row(children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(color: const Color(0xFFEAF0FF), borderRadius: BorderRadius.circular(14)),
-                  child: Icon(it.$1, color: P.blue),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(it.$2, style: const TextStyle(color: P.navy, fontWeight: FontWeight.w900)),
-                    const SizedBox(height: 2),
-                    Text(it.$3, style: const TextStyle(color: P.muted, fontSize: 12)),
-                  ]),
+              child: Column(children: [
+                Row(children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(color: const Color(0xFFEAF0FF), borderRadius: BorderRadius.circular(14)),
+                    child: Icon(it.$1, color: P.blue),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(it.$2, style: const TextStyle(color: P.navy, fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 2),
+                      Text(it.$3, style: const TextStyle(color: P.muted, fontSize: 12)),
+                    ]),
+                  ),
+                ]),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 40,
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(0, 40)),
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => BookingFormScreen(type: it.$4))),
+                    child: const Text('Book Now'),
+                  ),
                 ),
               ]),
             );

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'prime/config.dart';
 import 'prime/screens/auth.dart';
 import 'prime/store.dart';
-import 'prime/theme.dart';
+import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +28,8 @@ class PrimeRidesApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
         title: AppConfig.businessName,
-        theme: primeTheme(),
+        theme: AppTheme.lightTheme,
+        themeMode: ThemeMode.light,
         scrollBehavior: _ScrollBehavior(),
         builder: (context, child) {
           final mq = MediaQuery.of(context);
