@@ -6,6 +6,7 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'home.dart';
+import '../supabase_service.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key, required this.booking});
@@ -36,13 +37,50 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Future<void> _finish(String paymentId) async {
-    final done = widget.booking.copyWith(paymentId: paymentId, status: 'Confirmed');
+    final done = widget.booking.copyWith(
+      paymentId: paymentId,
+      status: 'Confirmed',
+    );
+
+    // 1. Save locally, as before.
     await AppStore.instance.addBooking(done);
+
+    // 2. Attempt to save to Supabase.
+    try {
+      await SupabaseService.client.from('bookings').insert({
+        'trip_type': done.type.name,
+        'customer_name': done.name,
+        'contact': done.contact,
+        'email': done.email,
+        'pickup_at': done.pickupAt.toIso8601String(),
+        'pickup_location': done.pickup,
+        'drop_location': done.drop,
+        'vehicle_type': done.vehicle,
+        'seats': done.seats,
+        'note': done.note,
+        'extra': done.extra,
+        'amount': done.amount,
+        'status': 'confirmed',
+        'payment_id': done.paymentId,
+      });
+
+      debugPrint('Booking saved to Supabase successfully.');
+    } catch (e) {
+      debugPrint('Supabase booking insert failed: $e');
+    }
+
     if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => SuccessScreen(booking: done)), (r) => false);
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => SuccessScreen(booking: done),
+      ),
+      (r) => false,
+    );
   }
 
-  void _onSuccess(PaymentSuccessResponse r) => _finish(r.paymentId ?? 'pay_unknown');
+  void _onSuccess(PaymentSuccessResponse r) =>
+      _finish(r.paymentId ?? 'pay_unknown');
 
   void _onError(PaymentFailureResponse r) {
     if (!mounted) return;
@@ -63,7 +101,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
         backgroundColor: Colors.transparent,
         builder: (_) => _DemoCheckout(amount: b.amount, phone: b.contact),
       );
-      if (ok == true) await _finish('pay_demo_${DateTime.now().millisecondsSinceEpoch}');
+      if (ok == true)
+        await _finish('pay_demo_${DateTime.now().millisecondsSinceEpoch}');
       return;
     }
     setState(() => _busy = true);
@@ -91,31 +130,46 @@ class _PaymentScreenState extends State<PaymentScreen> {
       body: SafeArea(
         child: Column(children: [
           Expanded(
-            child: ListView(padding: const EdgeInsets.fromLTRB(20, 4, 20, 20), children: [
-              _razorpayCard(b),
-              const SizedBox(height: 16),
-              const Text('Final booking details', style: TextStyle(color: P.navy, fontSize: 17, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 10),
-              Panel(child: BookingDetails(b)),
-              const SizedBox(height: 14),
-              const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.lock_rounded, size: 14, color: P.muted),
-                SizedBox(width: 6),
-                Text('Payments are secured by Razorpay', style: TextStyle(color: P.muted, fontSize: 12)),
-              ]),
-              if (AppConfig.demoPayment)
-                const Padding(
-                  padding: EdgeInsets.only(top: 6),
-                  child: Center(child: Text('Demo mode: no real money is charged', style: TextStyle(color: P.muted, fontSize: 11))),
-                ),
-            ]),
+            child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                children: [
+                  _razorpayCard(b),
+                  const SizedBox(height: 16),
+                  const Text('Final booking details',
+                      style: TextStyle(
+                          color: P.navy,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 10),
+                  Panel(child: BookingDetails(b)),
+                  const SizedBox(height: 14),
+                  const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.lock_rounded, size: 14, color: P.muted),
+                        SizedBox(width: 6),
+                        Text('Payments are secured by Razorpay',
+                            style: TextStyle(color: P.muted, fontSize: 12)),
+                      ]),
+                  if (AppConfig.demoPayment)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6),
+                      child: Center(
+                          child: Text('Demo mode: no real money is charged',
+                              style: TextStyle(color: P.muted, fontSize: 11))),
+                    ),
+                ]),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 6, 20, 14),
             child: ElevatedButton(
               onPressed: _busy ? null : _pay,
               child: _busy
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5, color: Colors.white))
                   : Text('Pay ₹${b.amount} Booking Advance'),
             ),
           ),
@@ -129,7 +183,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: P.line),
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .05), blurRadius: 18, offset: const Offset(0, 8))],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: .05),
+                blurRadius: 18,
+                offset: const Offset(0, 8))
+          ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(children: [
@@ -141,15 +200,28 @@ class _PaymentScreenState extends State<PaymentScreen> {
               const BrandLogo(size: 44, radius: 12),
               const SizedBox(width: 12),
               const Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(AppConfig.businessName, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: .8)),
-                  SizedBox(height: 2),
-                  Text('Ride booking payment', style: TextStyle(color: Color(0xFFB9C7DD), fontSize: 12)),
-                ]),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(AppConfig.businessName,
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: .8)),
+                      SizedBox(height: 2),
+                      Text('Ride booking payment',
+                          style: TextStyle(
+                              color: Color(0xFFB9C7DD), fontSize: 12)),
+                    ]),
               ),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                const Text('Booking advance amount', style: TextStyle(color: Color(0xFFB9C7DD), fontSize: 11)),
-                Text('₹${b.amount}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24)),
+                const Text('Booking advance amount',
+                    style: TextStyle(color: Color(0xFFB9C7DD), fontSize: 11)),
+                Text('₹${b.amount}',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 24)),
               ]),
             ]),
           ),
@@ -157,19 +229,31 @@ class _PaymentScreenState extends State<PaymentScreen> {
             padding: EdgeInsets.fromLTRB(18, 14, 18, 4),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text('Booking advance amount', style: TextStyle(color: P.green, fontWeight: FontWeight.w800, fontSize: 12)),
+              child: Text('Booking advance amount',
+                  style: TextStyle(
+                      color: P.green,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12)),
             ),
           ),
-          const _Method(Icons.qr_code_2_rounded, 'UPI', 'Google Pay • PhonePe • Paytm • BHIM'),
-          const _Method(Icons.credit_card_rounded, 'Cards', 'Visa • Mastercard • RuPay'),
-          const _Method(Icons.account_balance_rounded, 'Netbanking', 'All major banks'),
-          const _Method(Icons.account_balance_wallet_rounded, 'Wallets', 'Choose at checkout'),
+          const _Method(Icons.qr_code_2_rounded, 'UPI',
+              'Google Pay • PhonePe • Paytm • BHIM'),
+          const _Method(
+              Icons.credit_card_rounded, 'Cards', 'Visa • Mastercard • RuPay'),
+          const _Method(
+              Icons.account_balance_rounded, 'Netbanking', 'All major banks'),
+          const _Method(Icons.account_balance_wallet_rounded, 'Wallets',
+              'Choose at checkout'),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 10),
             color: const Color(0xFFF4F7FC),
             child: const Center(
-              child: Text('Secured by Razorpay', style: TextStyle(color: P.muted, fontSize: 11, fontWeight: FontWeight.w700)),
+              child: Text('Secured by Razorpay',
+                  style: TextStyle(
+                      color: P.muted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700)),
             ),
           ),
         ]),
@@ -186,10 +270,13 @@ class _Method extends StatelessWidget {
         leading: Container(
           width: 38,
           height: 38,
-          decoration: BoxDecoration(color: const Color(0xFFEAF0FF), borderRadius: BorderRadius.circular(11)),
+          decoration: BoxDecoration(
+              color: const Color(0xFFEAF0FF),
+              borderRadius: BorderRadius.circular(11)),
           child: Icon(icon, color: P.blue, size: 21),
         ),
-        title: Text(title, style: const TextStyle(color: P.navy, fontWeight: FontWeight.w800)),
+        title: Text(title,
+            style: const TextStyle(color: P.navy, fontWeight: FontWeight.w800)),
         subtitle: Text(sub, style: const TextStyle(fontSize: 11)),
         trailing: const Icon(Icons.chevron_right_rounded, color: P.muted),
       );
@@ -217,42 +304,74 @@ class _DemoCheckoutState extends State<_DemoCheckout> {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
-        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
+        padding: EdgeInsets.fromLTRB(
+            20, 16, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
+        decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
         child: SafeArea(
           top: false,
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: P.line, borderRadius: BorderRadius.circular(4)))),
-            const SizedBox(height: 14),
-            Row(children: [
-              const BrandLogo(size: 36, radius: 10),
-              const SizedBox(width: 10),
-              const Expanded(child: Text(AppConfig.businessName, style: TextStyle(color: P.navy, fontWeight: FontWeight.w900))),
-              Text('₹${widget.amount}', style: const TextStyle(color: P.navy, fontWeight: FontWeight.w900, fontSize: 20)),
-            ]),
-            const SizedBox(height: 2),
-            const Text('Booking advance amount', style: TextStyle(color: P.muted, fontSize: 12, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 2),
-            Text('+91 ${widget.phone}', style: const TextStyle(color: P.muted, fontSize: 12)),
-            const SizedBox(height: 14),
-            for (var i = 0; i < _m.length; i++)
-              RadioListTile<int>(
-                value: i,
-                groupValue: _sel,
-                onChanged: _paying ? null : (v) => setState(() => _sel = v ?? 0),
-                contentPadding: EdgeInsets.zero,
-                title: Text(_m[i], style: const TextStyle(fontWeight: FontWeight.w700)),
-              ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: _paying ? null : _go,
-              child: _paying
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                  : Text('Pay ₹${widget.amount}'),
-            ),
-            const SizedBox(height: 8),
-            const Center(child: Text('DEMO • Secured by Razorpay', style: TextStyle(color: P.muted, fontSize: 11))),
-          ]),
+          child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                    child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                            color: P.line,
+                            borderRadius: BorderRadius.circular(4)))),
+                const SizedBox(height: 14),
+                Row(children: [
+                  const BrandLogo(size: 36, radius: 10),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                      child: Text(AppConfig.businessName,
+                          style: TextStyle(
+                              color: P.navy, fontWeight: FontWeight.w900))),
+                  Text('₹${widget.amount}',
+                      style: const TextStyle(
+                          color: P.navy,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 20)),
+                ]),
+                const SizedBox(height: 2),
+                const Text('Booking advance amount',
+                    style: TextStyle(
+                        color: P.muted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text('+91 ${widget.phone}',
+                    style: const TextStyle(color: P.muted, fontSize: 12)),
+                const SizedBox(height: 14),
+                for (var i = 0; i < _m.length; i++)
+                  RadioListTile<int>(
+                    value: i,
+                    groupValue: _sel,
+                    onChanged:
+                        _paying ? null : (v) => setState(() => _sel = v ?? 0),
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(_m[i],
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: _paying ? null : _go,
+                  child: _paying
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2.5, color: Colors.white))
+                      : Text('Pay ₹${widget.amount}'),
+                ),
+                const SizedBox(height: 8),
+                const Center(
+                    child: Text('DEMO • Secured by Razorpay',
+                        style: TextStyle(color: P.muted, fontSize: 11))),
+              ]),
         ),
       );
 }
@@ -287,19 +406,30 @@ class _SuccessScreenState extends State<SuccessScreen> {
                 tween: Tween(begin: 0, end: 1),
                 duration: const Duration(milliseconds: 700),
                 curve: Curves.elasticOut,
-                builder: (_, v, child) => Transform.scale(scale: v, child: child),
+                builder: (_, v, child) =>
+                    Transform.scale(scale: v, child: child),
                 child: Container(
                   width: 86,
                   height: 86,
-                  decoration: const BoxDecoration(color: Color(0xFFE3F8EC), shape: BoxShape.circle),
-                  child: const Icon(Icons.check_rounded, color: P.green, size: 54),
+                  decoration: const BoxDecoration(
+                      color: Color(0xFFE3F8EC), shape: BoxShape.circle),
+                  child:
+                      const Icon(Icons.check_rounded, color: P.green, size: 54),
                 ),
               ),
             ),
             const SizedBox(height: 18),
-            const Center(child: Text('Ride booked!', style: TextStyle(color: P.navy, fontSize: 27, fontWeight: FontWeight.w900))),
+            const Center(
+                child: Text('Ride booked!',
+                    style: TextStyle(
+                        color: P.navy,
+                        fontSize: 27,
+                        fontWeight: FontWeight.w900))),
             const SizedBox(height: 6),
-            Center(child: Text('Booking ID: ${booking.id}', style: const TextStyle(color: P.muted, fontWeight: FontWeight.w700))),
+            Center(
+                child: Text('Booking ID: ${booking.id}',
+                    style: const TextStyle(
+                        color: P.muted, fontWeight: FontWeight.w700))),
             const SizedBox(height: 8),
             const Center(
               child: Text(
@@ -313,14 +443,20 @@ class _SuccessScreenState extends State<SuccessScreen> {
             const SizedBox(height: 18),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(backgroundColor: P.green),
-              onPressed: () => openWhatsApp(context, text: booking.whatsappText),
+              onPressed: () =>
+                  openWhatsApp(context, text: booking.whatsappText),
               icon: const Icon(Icons.chat_rounded),
               label: const Text('Send booking to admin on WhatsApp'),
             ),
             const SizedBox(height: 10),
             OutlinedButton(
-              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
-              onPressed: () => Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const HomeScreen()), (r) => false),
+              style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15))),
+              onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  (r) => false),
               child: const Text('Back to Home'),
             ),
           ]),

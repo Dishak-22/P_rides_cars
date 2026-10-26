@@ -13,10 +13,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Supabase before loading app data.
-  await Supabase.initialize(
-    url: SupabaseConfig.url,
-    anonKey: SupabaseConfig.publishableKey,
-  );
+await Supabase.initialize(
+  url: SupabaseConfig.url,
+  publishableKey: SupabaseConfig.publishableKey,
+);
 
   // Load existing local app data.
   await AppStore.instance.load();
