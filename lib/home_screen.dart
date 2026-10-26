@@ -141,15 +141,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _offerCard(_Offer offer) => Container(
     margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 3), clipBehavior: Clip.antiAlias,
     decoration: BoxDecoration(color: navy, borderRadius: BorderRadius.circular(26),
-      boxShadow: [BoxShadow(color: navy.withOpacity(.16), blurRadius: 18, offset: const Offset(0, 9))]),
+      boxShadow: [BoxShadow(color: navy.withValues(alpha: .16), blurRadius: 18, offset: const Offset(0, 9))]),
     child: Stack(fit: StackFit.expand, children: [
       Image.network(offer.image, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(
         decoration: const BoxDecoration(gradient: LinearGradient(colors: [navy, Color(0xFF345E9A)])),
-        child: Icon(Icons.directions_car_filled_rounded, size: 110, color: Colors.white.withOpacity(.16)))),
+        child: Icon(Icons.directions_car_filled_rounded, size: 110, color: Colors.white.withValues(alpha: .16)))),
       DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
-        colors: [Colors.black.withOpacity(.06), Colors.black.withOpacity(.22), Colors.black.withOpacity(.84)], stops: const [0, .35, 1]))),
+        colors: [Colors.black.withValues(alpha: .06), Colors.black.withValues(alpha: .22), Colors.black.withValues(alpha: .84)], stops: const [0, .35, 1]))),
       Positioned(top: 17, left: 16, child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        decoration: BoxDecoration(color: Colors.white.withOpacity(.94), borderRadius: BorderRadius.circular(30)),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: .94), borderRadius: BorderRadius.circular(30)),
         child: Text(offer.tag, style: const TextStyle(color: blue, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .65)))),
       Positioned(left: 18, right: 18, bottom: 18, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(offer.destination, style: const TextStyle(color: Color(0xFFE1E9FF), fontSize: 11, fontWeight: FontWeight.w700)),
@@ -247,7 +247,7 @@ class _Benefit extends StatelessWidget {
   final String title, subtitle;
   @override
   Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 13), child: Row(children: [
-    Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(.12), borderRadius: BorderRadius.circular(13)),
+    Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withValues(alpha: .12), borderRadius: BorderRadius.circular(13)),
       child: Icon(icon, color: const Color(0xFF9DB8FF))), const SizedBox(width: 12),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)), const SizedBox(height: 3),

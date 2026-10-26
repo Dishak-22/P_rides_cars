@@ -111,8 +111,9 @@ class _OffersScreenState extends State<OffersScreen> {
           child: FutureBuilder<List<Offer>>(
             future: _future,
             builder: (context, snap) {
-              if (!snap.hasData)
+              if (!snap.hasData) {
                 return const Center(child: CircularProgressIndicator());
+              }
               final list = snap.data!;
               return ListView.separated(
                 physics: const AlwaysScrollableScrollPhysics(),

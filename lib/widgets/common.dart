@@ -65,7 +65,7 @@ class SoftCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.line),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(.035), blurRadius: 18, offset: const Offset(0, 8))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .035), blurRadius: 18, offset: const Offset(0, 8))],
         ),
         child: child,
       );
@@ -135,7 +135,7 @@ class _MapPainter extends CustomPainter {
     c.drawPath(
       p,
       Paint()
-        ..color = AppColors.teal.withOpacity(.45)
+        ..color = AppColors.teal.withValues(alpha: .45)
         ..strokeWidth = 6
         ..style = PaintingStyle.stroke,
     );
