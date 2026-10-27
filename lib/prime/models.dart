@@ -63,9 +63,9 @@ const vehicles = <Vehicle>[
 ];
 
 class Offer {
-  final String title, subtitle, tag, imageUrl;
+  final String title, subtitle, tag, imageUrl, buttonText, promoCode, destination, validUntil;
   final TripType trip;
-  const Offer(this.title, this.subtitle, this.tag, {this.imageUrl = '', this.trip = TripType.roundTrip});
+  const Offer(this.title, this.subtitle, this.tag, {this.imageUrl = '', this.trip = TripType.roundTrip, this.buttonText = 'Book Now', this.promoCode = '', this.destination = '', this.validUntil = ''});
 
   factory Offer.fromJson(Map<String, dynamic> j) => Offer(
         (j['title'] ?? '').toString(),
@@ -73,6 +73,7 @@ class Offer {
         (j['tag'] ?? 'SPECIAL OFFER').toString(),
         imageUrl: (j['imageUrl'] ?? '').toString(),
         trip: tripTypeFromName(j['trip']?.toString()),
+        buttonText: (j['buttonText'] ?? 'Book Now').toString(),
       );
 }
 

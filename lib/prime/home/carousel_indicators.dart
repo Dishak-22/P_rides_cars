@@ -22,7 +22,7 @@ class CarouselIndicators extends StatelessWidget {
               height: 6,
               width: i == index ? 24 : 6,
               decoration: BoxDecoration(
-                color: i == index ? P.blue : P.line,
+                color: i == index ? P.gold : Colors.white.withValues(alpha: .28),
                 borderRadius: BorderRadius.circular(20),
               ),
             ),

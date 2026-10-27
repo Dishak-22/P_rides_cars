@@ -11,6 +11,11 @@ class PromoSlide {
     required this.gradient,
     this.badge = '',
     this.vehicleIndex = 1,
+    this.mediaUrl = '',
+    this.buttonText = 'Book Now',
+    this.promoCode = '',
+    this.destination = '',
+    this.validUntil = '',
   });
 
   final String heading;
@@ -27,6 +32,17 @@ class PromoSlide {
 
   /// Index into the `vehicles` list (models.dart) used for the car illustration.
   final int vehicleIndex;
+
+  /// Public URL of an admin-uploaded image/GIF (Supabase Storage). Empty = use bundled GIF or car art.
+  final String mediaUrl;
+
+  /// Gold button label, e.g. 'Book Now' or 'Explore Offer'.
+  final String buttonText;
+
+  /// Optional extras, shown only in the details sheet when the banner is tapped.
+  final String promoCode, destination, validUntil;
+
+  bool get hasDetails => promoCode.isNotEmpty || destination.isNotEmpty || validUntil.isNotEmpty;
 }
 
 class PromoSlides {
@@ -63,8 +79,8 @@ class PromoSlides {
       vehicleIndex: 3,
     ),
     PromoSlide(
-      heading: 'Round Trip Packages',
-      description: 'Convenient return-trip booking.',
+      heading: 'Book Your Next Ride',
+      description: 'Comfortable rides. Trusted drivers. Seamless travel.',
       trip: TripType.roundTrip,
       gradient: _slate,
       badge: 'ROUND TRIP',
@@ -85,6 +101,11 @@ class PromoSlides {
           gradient: palettes[i % palettes.length],
           badge: offers[i].tag,
           vehicleIndex: (i + 1) % vehicles.length,
+          mediaUrl: offers[i].imageUrl,
+          buttonText: offers[i].buttonText,
+          promoCode: offers[i].promoCode,
+          destination: offers[i].destination,
+          validUntil: offers[i].validUntil,
         ),
     ];
   }

@@ -15,6 +15,9 @@ class BookingCategoryCard extends StatefulWidget {
 class _BookingCategoryCardState extends State<BookingCategoryCard> {
   bool _pressed = false;
 
+  /// Lightens the brand colour so icons stay visible on the dark card.
+  static Color _soft(Color c) => Color.lerp(c, Colors.white, .55)!;
+
   @override
   Widget build(BuildContext context) {
     final t = widget.type;
@@ -29,7 +32,7 @@ class _BookingCategoryCardState extends State<BookingCategoryCard> {
         duration: const Duration(milliseconds: 110),
         curve: Curves.easeOut,
         child: Material(
-          color: P.pale,
+          color: const Color(0xFF0E1B36),
           borderRadius: BorderRadius.circular(22),
           child: InkWell(
             borderRadius: BorderRadius.circular(22),
@@ -39,16 +42,20 @@ class _BookingCategoryCardState extends State<BookingCategoryCard> {
               padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: P.line),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .04), blurRadius: 12, offset: const Offset(0, 5))],
+                border: Border.all(color: Colors.white.withValues(alpha: .10)),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.white.withValues(alpha: .07), Colors.white.withValues(alpha: .02)],
+                ),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Container(
                     width: 46,
                     height: 46,
-                    decoration: BoxDecoration(color: t.color.withValues(alpha: .12), borderRadius: BorderRadius.circular(14)),
-                    child: Icon(t.icon, color: t.color, size: 25),
+                    decoration: BoxDecoration(color: _soft(t.color).withValues(alpha: .16), borderRadius: BorderRadius.circular(14)),
+                    child: Icon(t.icon, color: _soft(t.color), size: 25),
                   ),
                   Container(
                     width: 30,
@@ -58,9 +65,9 @@ class _BookingCategoryCardState extends State<BookingCategoryCard> {
                   ),
                 ]),
                 const SizedBox(height: 14),
-                Text(t.title, style: const TextStyle(color: P.navy, fontSize: 14, fontWeight: FontWeight.w900)),
+                Text(t.title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 4),
-                Text(t.description, style: const TextStyle(color: P.muted, fontSize: 12, height: 1.3)),
+                Text(t.description, style: TextStyle(color: Colors.white.withValues(alpha: .62), fontSize: 12, height: 1.3)),
               ]),
             ),
           ),

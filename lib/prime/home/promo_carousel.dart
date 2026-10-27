@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models.dart';
 import 'carousel_indicators.dart';
-import 'promo_banner.dart';
+import 'animated_promo_banner.dart';
 import 'promo_slide.dart';
 
 /// Auto-advancing, swipeable promo carousel with slide + fade transition and indicators.
@@ -11,12 +11,16 @@ class PromoCarousel extends StatefulWidget {
     super.key,
     required this.slides,
     required this.onBook,
+    this.onDetails,
     this.interval = const Duration(seconds: 5),
-    this.height = 210,
+    this.height = 280,
   });
 
   final List<PromoSlide> slides;
   final ValueChanged<TripType> onBook;
+
+  /// Called when a slide that has extra details (code, destination, expiry) is tapped.
+  final ValueChanged<PromoSlide>? onDetails;
   final Duration interval;
   final double height;
 
@@ -109,7 +113,11 @@ class _PromoCarouselState extends State<PromoCarousel> with WidgetsBindingObserv
               final slide = widget.slides[i % _n];
               return AnimatedBuilder(
                 animation: _ctrl,
-                child: PromoBanner(slide: slide, onBook: () => widget.onBook(slide.trip)),
+                child: AnimatedPromoBanner(
+                  slide: slide,
+                  onBook: () => widget.onBook(slide.trip),
+                  onDetails: widget.onDetails == null ? null : () => widget.onDetails!(slide),
+                ),
                 builder: (_, child) {
                   // 0 when centred, +-1 when fully off to the side.
                   final d = (_pageValue() - i).clamp(-1.0, 1.0);

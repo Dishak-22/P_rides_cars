@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../config.dart';
 import '../models.dart';
 import '../offers_repo.dart';
@@ -6,7 +7,13 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import '../home/booking_category_card.dart';
+import '../home/home_bottom_nav.dart';
+import '../home/home_header.dart';
+import '../home/home_search_pill.dart';
+import '../home/home_style.dart';
 import '../home/promo_carousel.dart';
+import '../home/promo_details_sheet.dart';
+import '../home/promo_skeleton.dart';
 import '../home/promo_slide.dart';
 import '../home/whatsapp_fab.dart';
 import 'auth.dart';
@@ -20,106 +27,141 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<Offer> _offers = OfferRepo.defaults;
+  bool _loading = true; // true until the first load of promotions finishes
 
   @override
   void initState() {
     super.initState();
-    OfferRepo.load().then((o) {
-      if (mounted) setState(() => _offers = o);
+    WidgetsBinding.instance.addObserver(this);
+    _load();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Reload promotions when the app comes back to the foreground.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _load();
+  }
+
+  /// Published offers from Supabase; falls back to built-in slides on error / when none exist.
+  Future<void> _load() async {
+    final offers = await OfferRepo.load().timeout(const Duration(seconds: 6), onTimeout: () => OfferRepo.defaults);
+    if (!mounted) return;
+    setState(() {
+      _offers = offers;
+      _loading = false;
     });
   }
 
-  void _book(TripType t) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => BookingFormScreen(type: t)));
+  Future<void> _book(TripType t) async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => BookingFormScreen(type: t)));
+    if (mounted) _load(); // refresh offers when the customer returns to Home
+  }
 
   void _go(Widget page) {
     Navigator.of(context).pop(); // close drawer
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 
+  void _open(Widget page) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+
   @override
   Widget build(BuildContext context) {
     final store = AppStore.instance;
+    final first = store.name.trim().isEmpty ? '' : store.name.trim().split(' ').first;
     return ListenableBuilder(
       listenable: store,
-      builder: (context, _) => Scaffold(
-        drawer: _buildDrawer(store),
-        floatingActionButton: const WhatsAppFab(),
-        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-        body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: 100),
-            children: [
-              _topBar(),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(store.name.isEmpty ? 'Welcome!' : 'Hi, ${store.name.split(' ').first}!',
-                      style: const TextStyle(color: P.muted, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 4),
-                  const Text('Where would you\nlike to go?',
-                      style: TextStyle(color: P.navy, fontSize: 28, height: 1.15, fontWeight: FontWeight.w900)),
-                ]),
-              ),
-              PromoCarousel(
-                slides: PromoSlides.fromOffers(_offers, remote: AppConfig.offersUrl.isNotEmpty),
-                onBook: _book,
-              ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 26, 20, 4),
-                child: Text('Choose Your Ride', style: TextStyle(color: P.navy, fontSize: 21, fontWeight: FontWeight.w900)),
-              ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 0, 20, 14),
-                child: Text('Tap a service to start your booking.', style: TextStyle(color: P.muted, fontSize: 13)),
-              ),
-              BookingCategoryGrid(onSelect: _book),
-              const SizedBox(height: 26),
-              const Center(
-                child: Text(AppConfig.businessName,
-                    style: TextStyle(color: P.navy, fontWeight: FontWeight.w900, letterSpacing: 1.4, fontSize: 11)),
-              ),
-              const SizedBox(height: 4),
-              const Center(child: Text('Every journey starts with a good ride.', style: TextStyle(color: P.muted, fontSize: 11))),
-            ],
+      builder: (context, _) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light.copyWith(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: HomeColors.bottom,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
+        child: Scaffold(
+          backgroundColor: HomeColors.bottom,
+          drawer: _buildDrawer(store),
+          floatingActionButton: const WhatsAppFab(),
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+          bottomNavigationBar: HomeBottomNav(
+            onBookings: () => _open(const HistoryScreen()),
+            onOffers: () => _open(const OffersScreen()),
+            onProfile: () => _open(const ProfileScreen()),
           ),
+          body: Stack(children: [
+            const Positioned.fill(child: HomeBackground()),
+            SafeArea(
+              bottom: false,
+              child: RefreshIndicator(
+                color: P.gold,
+                backgroundColor: HomeColors.card,
+                onRefresh: _load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 90),
+                  children: [
+                    HomeHeader(onHistory: () => _open(const HistoryScreen())),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(first.isEmpty ? 'Welcome!' : 'Welcome, $first!',
+                            style: TextStyle(color: Colors.white.withValues(alpha: .62), fontWeight: FontWeight.w600, fontSize: 14)),
+                        const SizedBox(height: 6),
+                        const Text.rich(
+                          TextSpan(
+                            style: TextStyle(color: Colors.white, fontSize: 30, height: 1.14, fontWeight: FontWeight.w900),
+                            children: [
+                              TextSpan(text: 'Where would you\nlike to '),
+                              TextSpan(text: 'go?', style: TextStyle(color: P.gold)),
+                            ],
+                          ),
+                        ),
+                      ]),
+                    ),
+                    HomeSearchPill(onTap: () => _book(TripType.oneWay)),
+                    if (_loading)
+                      const PromoCarouselSkeleton()
+                    else
+                      PromoCarousel(
+                        slides: PromoSlides.fromOffers(_offers, remote: !identical(_offers, OfferRepo.defaults)),
+                        onBook: _book,
+                        onDetails: (s) => showPromoDetails(context, s, _book),
+                      ),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
+                      child: Text('Choose Your Ride', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                      child: Text('Tap a service to start your booking.',
+                          style: TextStyle(color: Colors.white.withValues(alpha: .6), fontSize: 13)),
+                    ),
+                    BookingCategoryGrid(onSelect: _book),
+                    const SizedBox(height: 26),
+                    const Center(
+                      child: Text(AppConfig.businessName,
+                          style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, letterSpacing: 1.4, fontSize: 11)),
+                    ),
+                    const SizedBox(height: 4),
+                    Center(
+                      child: Text('Every journey starts with a good ride.',
+                          style: TextStyle(color: Colors.white.withValues(alpha: .5), fontSize: 11)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ]),
         ),
       ),
     );
   }
-
-  Widget _topBar() => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-        child: Row(children: [
-          Builder(
-            builder: (ctx) => Material(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: () => Scaffold.of(ctx).openDrawer(),
-                child: const SizedBox(width: 46, height: 46, child: Icon(Icons.menu_rounded, color: P.navy)),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          const BrandLogo(size: 42, radius: 12),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('PRIME RIDES', style: TextStyle(color: P.navy, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.1)),
-              Text('PUNE', style: TextStyle(color: P.muted, fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2)),
-            ]),
-          ),
-          IconButton(
-            tooltip: 'Booking history',
-            style: IconButton.styleFrom(backgroundColor: Colors.white, foregroundColor: P.navy, fixedSize: const Size(46, 46)),
-            icon: const Icon(Icons.receipt_long_rounded),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const HistoryScreen())),
-          ),
-        ]),
-      );
 
   Widget _buildDrawer(AppStore store) => Drawer(
         child: SafeArea(
