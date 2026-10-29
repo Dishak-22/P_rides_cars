@@ -37,17 +37,24 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Future<void> _finish(String paymentId) async {
+    final client = SupabaseService.client;
+    final user = client.auth.currentUser;
+    if (user == null || client.auth.currentSession == null) {
+      if (mounted) snack(context, 'Your login session has expired. Please sign in again.');
+      return;
+    }
+
     final done = widget.booking.copyWith(
       paymentId: paymentId,
       status: 'Confirmed',
     );
 
-    // 1. Save locally, as before.
-    await AppStore.instance.addBooking(done);
-
-    // 2. Attempt to save to Supabase.
     try {
-      await SupabaseService.client.from('bookings').insert({
+      // The database customer_id must be the authenticated Supabase UUID;
+      // RLS validates it against auth.uid(). Keep the DB status within the
+      // allowed values from the existing schema.
+      await client.from('bookings').insert({
+        'customer_id': user.id,
         'trip_type': done.type.name,
         'customer_name': done.name,
         'contact': done.contact,
@@ -60,21 +67,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
         'note': done.note,
         'extra': done.extra,
         'amount': done.amount,
-        'status': 'confirmed',
+        'status': 'new',
+        'payment_status': 'pending',
         'payment_id': done.paymentId,
       });
 
-      debugPrint('Booking saved to Supabase successfully.');
+      await AppStore.instance.addBooking(done);
+      debugPrint('Booking saved to Supabase successfully for customer UUID ${user.id}.');
     } catch (e) {
       debugPrint('Supabase booking insert failed: $e');
+      if (mounted) snack(context, 'Could not save booking: $e');
+      return;
     }
 
     if (!mounted) return;
-
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) => SuccessScreen(booking: done),
-      ),
+      MaterialPageRoute(builder: (_) => SuccessScreen(booking: done)),
       (r) => false,
     );
   }
